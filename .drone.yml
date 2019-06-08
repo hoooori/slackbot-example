@@ -1,0 +1,35 @@
+kind: pipeline
+name: default
+
+steps:
+- name: reitan-build
+  image: plugins/gcr
+  settings:
+    repo: path/to/repo
+    tags:
+    - latest
+    - ${DRONE_COMMIT_SHA}
+    - ${DRONE_BUILD_NUMBER}
+    json_key:
+      from_secret: secret
+    privileged: true
+    use_cache: true
+  when:
+    branch: master
+    event: push
+  volumes:
+  - path: /var/run/docker.sock:/var/run/docker.sock
+- name: deploy-reitan-prod
+  image: quay.io/honestbee/drone-kubernetes
+  settings:
+    kubernetes_server: server
+    repo: path/to/repo
+    namespace: reitan
+    deployment: reitan
+    container: reitan
+    tag: ${DRONE_COMMIT_SHA}
+    kubernetes_token:
+      from_secret: token
+  when:
+    branch: master
+    event: push
